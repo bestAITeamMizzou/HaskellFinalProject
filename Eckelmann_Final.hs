@@ -56,12 +56,13 @@ eval (Function x body) env          = ClosureV x body env
 -----------------------------------------------------------------
 eval (Declare [(x,exp)] body) env = eval body newEnv         -- This clause needs to be changed.
   where newEnv = (x, eval exp env) : env                       --
-eval (Declare ((x,exp):rest) body) env = eval (Declare rest body) newEnv      --
+--pattern matching for list of tuples found at https://stackoverflow.com/a/20251280
+eval (Declare ((x,exp):rest) body) env = eval (Declare rest body) newEnv
   where newEnv = (x, eval exp env) : env                       --
 -----------------------------------------------------------------
 eval (RecDeclare x exp body) env    = eval body newEnv
-eval (Call fun arg) env = eval body newEnv
   where newEnv = (x, eval exp newEnv) : env
+eval (Call fun arg) env = eval body newEnv
   where ClosureV x body closeEnv    = eval fun env
         newEnv = (x, eval arg env) : closeEnv
         
@@ -102,5 +103,17 @@ process iline  = do
          v = eval e []
 
 
+------------------------------------
+--          Testing               --
+------------------------------------
 
+test_probs :: IO()
+test_probs = do
+  test_prob1
 
+test_prob1 :: IO()
+test_prob1 = hspec $ do
+  describe "eval Declare..." $ do
+    context "when provided with a list containing single declaration and a body" $ do
+      it "returns a Value" $ do
+        eval (Declare [("a",Literal (IntV 3))] (Declare [("b",Literal (IntV 8))] (Declare [("a",Variable "b"),("b",Variable "a")] (Binary Add (Variable "a") (Variable "b"))))) [] `shouldBe` IntV 16
