@@ -21,7 +21,6 @@ data Value = IntV  Int
 
 type Env = [(String, Value)]
 
-
 unary Not (BoolV b) = BoolV (not b)
 unary Neg (IntV i)  = IntV (-i)
 

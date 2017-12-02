@@ -11,7 +11,7 @@ import Operators
 import RecursiveFunctionsAST
 import RecursiveFunctionsParse
 import Test.Hspec
-import Control.Exception (evaluate,AsyncException(..))
+import Control.Exception (evaluate, AsyncException(..))
 -- Uncomment the following if you choose to do Problem 3.
 {-
 import System.Environment
@@ -116,4 +116,12 @@ test_prob1 = hspec $ do
   describe "eval Declare..." $ do
     context "when provided with a list containing single declaration and a body" $ do
       it "returns a Value" $ do
+        eval (Declare [("a",Literal (IntV 3))] (Declare [("b",Literal (IntV 8))] (Declare [("a",Variable "b")] (Declare [("b",Variable "a")] (Binary Add (Variable "a") (Variable "b")))))) [] `shouldBe` IntV 16
+    context "when provided with a list containing multiple declarations and a body" $ do
+      it "returns a Value" $ do
         eval (Declare [("a",Literal (IntV 3))] (Declare [("b",Literal (IntV 8))] (Declare [("a",Variable "b"),("b",Variable "a")] (Binary Add (Variable "a") (Variable "b"))))) [] `shouldBe` IntV 16
+      it "returns a Value" $ do
+        eval (Declare [("a",Literal (IntV 2)),("b",Literal (IntV 7))] (Binary Add (Declare [("m",Binary Mul (Literal (IntV 5)) (Variable "a")),("n",Binary Sub (Variable "b") (Literal (IntV 1)))] (Binary Add (Binary Mul (Variable "a") (Variable "n")) (Binary Div (Variable "b") (Variable "m")))) (Variable "a"))) [] `shouldBe` IntV 14
+    context "when provided with a Declaration expression containing free variables" $ do
+      it "throws an exception" $ do
+        evaluate(eval (Declare [("a",Literal (IntV 2)),("b",Literal (IntV 7))] (Binary Add (Declare [("m",Binary Mul (Literal (IntV 5)) (Variable "a")),("n",Binary Sub (Variable "m") (Literal (IntV 1)))] (Binary Add (Binary Mul (Variable "a") (Variable "n")) (Binary Div (Variable "b") (Variable "m")))) (Variable "a")))) `shouldThrow` errorCall "Variable n unbound!"
