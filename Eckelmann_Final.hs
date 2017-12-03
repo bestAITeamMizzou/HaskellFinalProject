@@ -54,11 +54,13 @@ eval (Variable x) env               = fromJust x (lookup x env)
         fromJust x Nothing          = errorWithoutStackTrace ("Variable " ++ x ++ " unbound!")
 eval (Function x body) env          = ClosureV x body env
 -----------------------------------------------------------------
-eval (Declare [(x,exp)] body) env = eval body newEnv         -- This clause needs to be changed.
+eval (Declare [(x,exp)] body) env = eval body newEnv           -- This clause needs to be changed.
   where newEnv = (x, eval exp env) : env                       --
 --pattern matching for list of tuples found at https://stackoverflow.com/a/20251280
-eval (Declare ((x,exp):rest) body) env = eval (Declare rest body) newEnv
-  where newEnv = (x, eval exp env) : env                       --
+eval (Declare ((x, exp):rest) body) env = eval body newEnv     --
+  where newEnv = (boundScopeEnv ((x, exp):rest) env) ++ env    --
+          where boundScopeEnv [] env = []
+                boundScopeEnv ((x, exp):exps) env = (x, eval exp env):(boundScopeEnv exps env)
 -----------------------------------------------------------------
 eval (RecDeclare x exp body) env    = eval body newEnv
   where newEnv = (x, eval exp newEnv) : env
@@ -116,12 +118,12 @@ test_prob1 = hspec $ do
   describe "eval Declare..." $ do
     context "when provided with a list containing single declaration and a body" $ do
       it "returns a Value" $ do
-        eval (Declare [("a",Literal (IntV 3))] (Declare [("b",Literal (IntV 8))] (Declare [("a",Variable "b")] (Declare [("b",Variable "a")] (Binary Add (Variable "a") (Variable "b")))))) [] `shouldBe` IntV 16
+        execute exp2 `shouldBe` IntV 16
     context "when provided with a list containing multiple declarations and a body" $ do
       it "returns a Value" $ do
-        eval (Declare [("a",Literal (IntV 3))] (Declare [("b",Literal (IntV 8))] (Declare [("a",Variable "b"),("b",Variable "a")] (Binary Add (Variable "a") (Variable "b"))))) [] `shouldBe` IntV 16
+        execute exp1 `shouldBe` IntV 11
       it "returns a Value" $ do
-        eval (Declare [("a",Literal (IntV 2)),("b",Literal (IntV 7))] (Binary Add (Declare [("m",Binary Mul (Literal (IntV 5)) (Variable "a")),("n",Binary Sub (Variable "b") (Literal (IntV 1)))] (Binary Add (Binary Mul (Variable "a") (Variable "n")) (Binary Div (Variable "b") (Variable "m")))) (Variable "a"))) [] `shouldBe` IntV 14
+        execute exp3 `shouldBe` IntV 14
     context "when provided with a Declaration expression containing free variables" $ do
       it "throws an exception" $ do
-        evaluate(eval (Declare [("a",Literal (IntV 2)),("b",Literal (IntV 7))] (Binary Add (Declare [("m",Binary Mul (Literal (IntV 5)) (Variable "a")),("n",Binary Sub (Variable "m") (Literal (IntV 1)))] (Binary Add (Binary Mul (Variable "a") (Variable "n")) (Binary Div (Variable "b") (Variable "m")))) (Variable "a")))) `shouldThrow` errorCall "Variable n unbound!"
+        evaluate(execute exp4) `shouldThrow` anyException
