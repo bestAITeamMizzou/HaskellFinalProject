@@ -22,7 +22,6 @@ import System.Console.Haskeline
 --        ^^ This requires installing haskeline: cabal update && cabal install haskeline
 -}
 
-
 --
 -- The parsing function, parseExp :: String -> Exp, is defined for you.
 --
@@ -58,15 +57,13 @@ eval (Declare [(x,exp)] body) env   = eval body newEnv         -- This clause ne
     where newEnv = (x, eval exp env) : env                       
 --pattern matching for list of tuples found at https://stackoverflow.com/a/20251280
 eval (Declare ((x,exp):xs) body) env = eval body newEnv--(Declare xs body) newEnv
-    where newEnv = concatTuples (go ((x,exp):xs) env []) env []
+   {--where newEnv = concatTuples (go ((x,exp):xs) env []) env []
             where go ((y,nExp):[]) oldEnv tempEnv = (y, eval nExp oldEnv) : tempEnv --errorWithoutStackTrace("1 - oEnv: " ++ show(oldEnv) ++ "\ntEnv: " ++ show(tempEnv) ++ "\n")
                   go ((y,nExp):ys) oldEnv tempEnv = go ys oldEnv ((y, eval nExp oldEnv) : tempEnv)
-                  go [] oldEnv tempEnv            = errorWithoutStackTrace("How'd this happen?\nEnv: " ++ show(oldEnv))
---  where newEnv = (x, eval exp env) : env 
-{-  where newEnv = (boundScopeEnv ((x, exp):rest) env) ++ env    --
-          where boundScopeEnv [] env = []
-                boundScopeEnv ((x, exp):exps) env = (x, eval exp env):(boundScopeEnv exps env)
--}
+                  go [] oldEnv tempEnv            = errorWithoutStackTrace("How'd this happen?\nEnv: " ++ show(oldEnv))--}
+    where newEnv = (boundScopeEnv ((x, exp):xs) env) ++ env    --
+            where boundScopeEnv [] env = []
+                  boundScopeEnv ((x, exp):exps) env = (x, eval exp env):(boundScopeEnv exps env)
 -----------------------------------------------------------------
 eval (RecDeclare x exp body) env    = eval body newEnv
   where newEnv = (x, eval exp newEnv) : env
@@ -79,7 +76,6 @@ concatTuples []     [] z          = z
 concatTuples (x:xs) [] z          = concatTuples xs [] (x:z)
 concatTuples [] (y:ys) z          = concatTuples [] ys (y:z)
 concatTuples (x:xs) (y:ys) z      = concatTuples (x:xs) ys (y:z)
-
 
 -- Use this function to run your eval solution.
 execute :: Exp -> Value
